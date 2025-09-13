@@ -3,15 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package principal;
+package datos;
 
 /**
  *
  * @author Lucas
  */
-public class Principal {
-
-    public static void main(String[] args) {
-
-    }
+interface lCalculable {
+    double calcularExtra();
 }

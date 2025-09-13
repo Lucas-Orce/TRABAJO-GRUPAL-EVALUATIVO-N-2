@@ -3,15 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package principal;
+package datos;
 
 /**
  *
  * @author Lucas
  */
-public class Principal {
+public class TransporteMercaderíasPeligrosas extends TransporteMercaderías implements lCalculable{
 
-    public static void main(String[] args) {
-
+    @Override
+    public double calcularExtra() {
+        return 0;
     }
+    
 }
