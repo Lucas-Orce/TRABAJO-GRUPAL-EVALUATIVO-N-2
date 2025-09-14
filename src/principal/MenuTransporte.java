@@ -10,6 +10,10 @@ package principal;
  * @author Lucas
  */
 public class MenuTransporte {
+
+    void menu() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     //aqui va todo lo que se le hace al transporte, o sea,
     //   ALTA       BAJA      MODIFICACIONES
     //      formato

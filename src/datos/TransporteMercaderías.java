@@ -35,19 +35,18 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
         this.esPeligroso = esPeligroso;
     }
 
-    public void Cargar(){
+    public void Cargar() {
         super.cargaCompleta();
         leerToneladas();
         Peligroso();
     }
-    
+
     public void leerToneladas() {
         this.setToneladas(Validator.validarDouble("Ingrese la cantidad de toneladas que llevara: "));
     }
 
-    
     public void Peligroso() {
-        int des = Validator.validarInt("Indique si la carga es peligrosa: (1-si || 2-no)");
+        int des = Validator.validarInt("Indique si la carga es peligrosa: (1-SI || 2-NO)");
         if (des == 1) {
             this.esPeligroso = true;
         } else if (des != 1) {
@@ -56,7 +55,16 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
     }
 
     @Override
-    public int CompareTo(Transporte Tr) {
+    public double calcularExtra() {
+        if (esPeligroso) {
+            return (7000 * Toneladas) + 20000;
+        } else {
+            return (7000 * Toneladas);
+        }
+    }
+
+    @Override
+    public int compareTo(Transporte Tr) {
         if (this.codT > Tr.codT) {
             return 1;
         }
@@ -67,19 +75,4 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
         }
     }
 
-    @Override
-    public double calcularExtra() {
-        if(esPeligroso){
-            return (7000*Toneladas)+20000;
-        }else{
-            return (7000*Toneladas);
-        }
-    }
-
-    @Override
-    public int compareTo(Transporte o) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
 }
-

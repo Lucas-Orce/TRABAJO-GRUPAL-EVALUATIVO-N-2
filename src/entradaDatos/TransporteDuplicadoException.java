@@ -9,6 +9,8 @@ package entradaDatos;
  *
  * @author Lucas
  */
-public class Excepciones extends Exception{
-    
+public class TransporteDuplicadoException extends Exception {
+    public TransporteDuplicadoException(String mensaje) {
+        super(mensaje);
+    }
 }

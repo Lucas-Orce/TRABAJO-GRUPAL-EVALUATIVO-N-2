@@ -5,19 +5,20 @@
  */
 package datos;
 
-
-import entradaDatos.Validator;
+import entradaDatos.*;
 import java.io.IOException;
+import entradaDatos.DatosInvalidosException;
 import java.io.RandomAccessFile;
+import java.io.Serializable;
 import persistencia.*;
 
 /**
  *
  * @author Mariano
  */
+public class Conductor implements Serializable, Grabable, Comparable<Conductor> {
 
-public class Conductor {
-
+    private static int contador = 0;
     private int NumOrd;  //4 
     private int dni;  //4
     private String Ape_Nom; //40
@@ -26,12 +27,13 @@ public class Conductor {
     private static int TAMARCHIVO = 100;
     private static int TAMAREG = 49;
 
+
     //Constructores
     public Conductor() {
     }
 
-    public Conductor(int NumOrd, int dni, String Ape_Nom, boolean estado) {
-        this.NumOrd = NumOrd; //para que se incremente cada vez que se cree un nuevo objeto
+    public Conductor(int dni, String Ape_Nom, boolean estado) {
+        this.NumOrd = ++contador; //para que se incremente cada vez que se cree un nuevo objeto
         this.dni = dni;
         this.Ape_Nom = Ape_Nom;
         this.estado = true;
@@ -41,10 +43,6 @@ public class Conductor {
     //*****Getters & setters******
     public int getNumOrd() {
         return NumOrd;
-    }
-
-    public void setNumOrd(int NumOrd) {
-        this.NumOrd = NumOrd;
     }
 
     public int getDni() {
@@ -72,27 +70,6 @@ public class Conductor {
     }
     //*****Getters & setters******
 
-    //*****Cargas*****
-    public void carga() {
-        leerdni();
-        leerNombre();
-    }
-
-    public void leerNum(){
-        int min=0;
-        int max=100;
-        setNumOrd(Validator.validarIntRango(min, max, "Ingrese el numero de orden: "));
-    }
-    
-    public void leerdni() {
-        setDni(Validator.validarDNI("Ingrese el dni del Conductor: "));
-    }
-
-    public void leerNombre() {
-        this.setApe_Nom(Validator.validarTexto("Ingrese el nombre del conductor: "));
-    }
-    //*****Fin cargas*****
-
     //***Funciones***
     public int tamRegistro() {
         return TAMAREG;
@@ -111,23 +88,23 @@ public class Conductor {
             System.exit(1);
         }
     }
-    
-    public void leer(RandomAccessFile a, int val){
-        try{
+
+    public void leer(RandomAccessFile a, int val) {
+        try {
             NumOrd = a.readInt();
             Ape_Nom = Registro.leerString(a, 20).trim();
-        }catch(IOException e){
-            System.out.println("Error al leer el registro: " +e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Error al leer el registro: " + e.getMessage());
             System.exit(1);
         }
     }
 
     @Override
     public boolean equals(Object x) {
-        if(x==null){
+        if (x == null) {
             return false;
         }
-        
+
         Conductor a = (Conductor) x;
         return (NumOrd == a.NumOrd);
     }
@@ -138,20 +115,16 @@ public class Conductor {
     }
 
     public void mostrarRegistro(int val, boolean activo) {
-        if(val == 0){
+        if (val == 0) {
             System.out.println("Numero de orden --  Nombre y apellido  --  Estado  --  DNI ");
         }
-        if(val == 1 && activo){
+        if (val == 1 && activo) {
             System.out.println(toString());
         }
-        if(val == 2 && activo){
+        if (val == 2 && activo) {
             String condicion = estado ? "Existe" : "No existe";
-            System.out.println("Numero de destino: " +getNumOrd()+ "Nombre&Apellido: " +this.getApe_Nom()+ "Dni: "+this.getDni() + "Estado: "+estado); 
+            System.out.println("Numero de destino: " + getNumOrd() + "Nombre&Apellido: " + this.getApe_Nom() + "Dni: " + this.getDni() + "Estado: " + condicion);
         }
-    }
-    
-    public boolean compararConductor(int x) {
-        return dni == x;
     }
 
     public void darDeBaja() {
@@ -165,8 +138,41 @@ public class Conductor {
     @Override
     public String toString() {
         String condicion = estado ? "Existe" : "No existe";
-        return "Conductor{" + "NumOrd=" + NumOrd + ", dni=" + dni + ", Ape_Nom=" + Ape_Nom + ", estado=" + condicion + '}';
+        return "Conductor" + "NumOrd=" + NumOrd + ", dni=" + dni + ", Ape_Nom=" + Ape_Nom + ", estado=" + condicion + '}';
     }
-    //***Fin funciones***
 
+    @Override
+    public int compareTo(Conductor o) {
+        if (this.NumOrd > o.NumOrd) {
+            return 1;
+        }
+        if (this.NumOrd < o.NumOrd) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    //***Fin funciones***
+    @Override
+    public void cargarDatos(int val) {
+        try {
+            if (val == 0) {
+                NumOrd = Validator.validarInt("Ingrese el numero de orden");
+            }
+
+            dni = Validator.validarDNI("Ingrese el DNI del conductor: ");
+            Ape_Nom = Validator.validarTexto("Ingrese el nombre y apellido del conductor");
+
+            estado = true;
+    /*    } catch (DatosInvalidosException e) {
+            System.out.println("Error: " + e.getMessage());
+            // Volver a cargar datos si hay error
+            cargarDatos(val);
+        */} catch (Exception e) {
+            System.out.println("Error al ingresar datos: " + e.getMessage());
+            cargarDatos(val);
+        }
+
+    }
 }

@@ -11,7 +11,7 @@ import entradaDatos.Validator;
  *
  * @author Mariano
  */
-public class TransportePersonas extends Transporte implements lCalculable{
+public class TransportePersonas extends Transporte implements lCalculable {
 
     private int Personas;
 
@@ -25,27 +25,27 @@ public class TransportePersonas extends Transporte implements lCalculable{
     public void setPersonas(int Personas) {
         this.Personas = Personas;
     }
-    
-    public void Cargar(){
+
+    public void Cargar() {
         super.cargaCompleta();
         leerPersonas();
     }
-    
-    public void leerPersonas(){
+
+    public void leerPersonas() {
         this.setPersonas(Validator.validarInt("Ingrese la cantidad de personas que llevara el transporte: "));
     }
-    
+
     @Override
     public double calcularExtra() {
-        if(Personas > 9){
+        if (Personas > 9) {
             return 5500 * this.hora;
-        }else{
+        } else {
             return 3000 * this.hora;
         }
     }
 
     @Override
-    public int CompareTo(Transporte Tr) {
+    public int compareTo(Transporte Tr) {
         if (this.codT > Tr.codT) {
             return 1;
         }
@@ -56,10 +56,4 @@ public class TransportePersonas extends Transporte implements lCalculable{
         }
     }
 
-    @Override
-    public int compareTo(Transporte o) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-   
 }
