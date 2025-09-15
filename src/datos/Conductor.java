@@ -7,7 +7,6 @@ package datos;
 
 import entradaDatos.*;
 import java.io.IOException;
-import entradaDatos.DatosInvalidosException;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 import persistencia.*;
@@ -26,7 +25,6 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
 
     private static int TAMARCHIVO = 100;
     private static int TAMAREG = 49;
-
 
     //Constructores
     public Conductor() {
@@ -71,14 +69,17 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
     //*****Getters & setters******
 
     //***Funciones***
+    @Override
     public int tamRegistro() {
         return TAMAREG;
     }
 
+    @Override
     public int tamArchivo() {
         return TAMARCHIVO;
     }
 
+    @Override
     public void grabar(RandomAccessFile a) {
         try {
             a.writeInt(NumOrd);
@@ -89,6 +90,7 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
         }
     }
 
+    @Override
     public void leer(RandomAccessFile a, int val) {
         try {
             NumOrd = a.readInt();
@@ -114,6 +116,7 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
         return NumOrd;
     }
 
+    @Override
     public void mostrarRegistro(int val, boolean activo) {
         if (val == 0) {
             System.out.println("Numero de orden --  Nombre y apellido  --  Estado  --  DNI ");
@@ -165,13 +168,8 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
             Ape_Nom = Validator.validarTexto("Ingrese el nombre y apellido del conductor");
 
             estado = true;
-    /*    } catch (DatosInvalidosException e) {
-            System.out.println("Error: " + e.getMessage());
-            // Volver a cargar datos si hay error
-            cargarDatos(val);
-        */} catch (Exception e) {
+        } catch (Exception e) {
             System.out.println("Error al ingresar datos: " + e.getMessage());
-            cargarDatos(val);
         }
 
     }

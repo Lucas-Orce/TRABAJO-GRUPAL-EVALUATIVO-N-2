@@ -9,6 +9,6 @@ package datos;
  *
  * @author Lucas
  */
-interface lCalculable {
+public interface lCalculable {
     double calcularExtra();
 }
