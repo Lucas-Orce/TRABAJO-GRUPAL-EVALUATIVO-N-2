@@ -174,7 +174,6 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
             System.out.println("DNI conductor: "+dniCond);
             System.out.println("Sueldo Extra: "+String.format("%.2f", extra));
             System.out.println("Estado: "+(estado?"Activo":"Inactivo"));
-            
         }
     }
 

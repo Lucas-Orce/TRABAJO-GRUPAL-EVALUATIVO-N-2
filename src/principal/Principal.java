@@ -55,8 +55,9 @@ public class Principal {
 
     }
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args) throws TransporteDuplicadoException, ConductorInexistenteException{
+        Principal main = new Principal();
+        main.menuPrincipal();
     }
 
     private void cargaConductor() {
