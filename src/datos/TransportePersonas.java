@@ -16,6 +16,9 @@ public class TransportePersonas extends Transporte implements lCalculable {
     private int Personas;
 
     public TransportePersonas() {
+        super.Tipo = 'P';
+        cargarDatos(0);
+        super.estado = true;
     }
 
     public int getPersonas() {
@@ -24,11 +27,6 @@ public class TransportePersonas extends Transporte implements lCalculable {
 
     public void setPersonas(int Personas) {
         this.Personas = Personas;
-    }
-
-    public void Cargar() {
-        super.cargaCompleta();
-        leerPersonas();
     }
 
     public void leerPersonas() {
@@ -54,6 +52,12 @@ public class TransportePersonas extends Transporte implements lCalculable {
         } else {
             return 0;
         }
+    }
+
+    @Override
+    public void cargarDatos(int val) {
+        super.cargarDatos(val);
+        leerPersonas();
     }
 
 }

@@ -20,7 +20,7 @@ public class Principal {
     private Archivo archivoConductores;
     private Archivo archivoTransportes;
 
-    public void menuPrincipal() {
+    public void menuPrincipal() throws TransporteDuplicadoException, ConductorInexistenteException {
         int opcion;
         do {
             System.out.println("---Menu Principal---");
@@ -80,8 +80,8 @@ public class Principal {
 
     }
 
-    private void menuTransporte() {
-        MenuTransporte menuT = new MenuTransporte();
+    private void menuTransporte() throws TransporteDuplicadoException, ConductorInexistenteException {
+        MenuTransporte menuT = new MenuTransporte(archivoTransportes,archivoConductores);
         menuT.menu();
     }
 

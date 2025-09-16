@@ -17,6 +17,9 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
     private boolean esPeligroso;
 
     public TransporteMercaderías() {
+        super.Tipo='M';
+        cargarDatos(0);
+        super.estado = true;
     }
 
     public double getToneladas() {
@@ -33,12 +36,6 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
 
     public void setEsPeligroso(boolean esPeligroso) {
         this.esPeligroso = esPeligroso;
-    }
-
-    public void Cargar() {
-        super.cargaCompleta();
-        leerToneladas();
-        Peligroso();
     }
 
     public void leerToneladas() {
@@ -75,4 +72,13 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
         }
     }
 
+    @Override
+    public void cargarDatos(int val) {
+        super.cargarDatos(val);
+        leerToneladas();
+        Peligroso();
+    }
+
+    
+    
 }

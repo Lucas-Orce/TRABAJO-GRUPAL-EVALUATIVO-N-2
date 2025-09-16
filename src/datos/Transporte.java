@@ -6,7 +6,6 @@
 package datos;
 
 import entradaDatos.ConductorInexistenteException;
-import entradaDatos.DatosInvalidosException;
 import entradaDatos.TransporteDuplicadoException;
 import entradaDatos.Validator;
 import java.io.IOException;
@@ -36,11 +35,8 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
     public Transporte() {
     }
 
-    public Transporte(int codT, char Tipo, int hora, int dniCond, boolean estado) {
-        this.codT = codT;
+    public Transporte(char Tipo) {
         this.Tipo = Tipo;
-        this.hora = hora;
-        this.dniCond = dniCond;
         this.extra = calcularExtra();
         this.estado = true;
     }
@@ -95,24 +91,6 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
 
     public void setEstado(boolean estado) {
         this.estado = estado;
-    }
-
-    public void cargaCompleta() {
-        leerCodigo();
-        leerhoras();
-        leerDniCon();
-    }
-
-    public void leerCodigo() {
-        setCodT(Validator.validarInt("Ingrese el codito del transporte: "));
-    }
-
-    public void leerhoras() {
-        setHora(Validator.validarInt("Ingrese las horas conducidas del "));
-    }
-
-    public void leerDniCon() {
-        setDniCond(Validator.validarDNI("Ingrese el dni del conductor: "));
     }
 
     public void darDeBaja() {
