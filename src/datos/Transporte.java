@@ -27,7 +27,7 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
     protected boolean estado;
 
     private static int TAMARCHIVO = 100;
-    private static int TAMAREG = 39;
+    private static int TAMAREG = 40;
     
     private static Archivo archivoConductores;
     private static Archivo archivoTransportes;
@@ -133,8 +133,12 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
     }
 
     @Override
-    public void grabar(RandomAccessFile a) {
+     public void grabar(RandomAccessFile a) {
         try {
+            a.writeLong(dniCond);
+            a.writeDouble(extra);
+            a.writeChar(Tipo);
+            a.writeInt(hora);
             a.writeInt(codT);
             Registro.writeString(a, "", 20);
         } catch (IOException e) {
@@ -144,8 +148,12 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
     }
 
     @Override
-    public void leer(RandomAccessFile a, int val) {
+     public void leer(RandomAccessFile a, int val) {
         try {
+            dniCond=a.readLong();
+            extra=a.readDouble();
+            Tipo = a.readChar();
+            hora = a.readInt();
             codT = a.readInt();
         } catch (IOException e) {
             System.out.println("Error al leer el registro: " + e.getMessage());

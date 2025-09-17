@@ -6,6 +6,8 @@
 package datos;
 
 import entradaDatos.Validator;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  *
@@ -58,6 +60,26 @@ public class TransportePersonas extends Transporte implements lCalculable {
     public void cargarDatos(int val) {
         super.cargarDatos(val);
         leerPersonas();
+    }
+
+    @Override
+    public void leer(RandomAccessFile a, int val) {
+        try {
+            super.leer(a, val);
+            Personas=a.readInt();
+        } catch (IOException e) {
+            System.out.println("Error al leer el registro: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void grabar(RandomAccessFile a) {
+        try {
+            super.grabar(a);
+            a.write(Personas);
+        } catch (Exception e) {
+        }
+
     }
 
 }

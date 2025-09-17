@@ -22,10 +22,10 @@ import persistencia.Registro;
 public class MenuTransporte {
 
     private Archivo archivoTransportes;
-    private Archivo archivoConductores;
+    private final Archivo archivoConductores;
 
-    public MenuTransporte(Archivo archivoTransportes, Archivo archivoConductores) {
-        this.archivoTransportes = archivoTransportes;
+    public MenuTransporte(Archivo archivoConductores) throws ClassNotFoundException {
+       crearArchivo();
         this.archivoConductores = archivoConductores;
     }
 
@@ -59,7 +59,7 @@ public class MenuTransporte {
     }
 
     private void altaTransporte() throws TransporteDuplicadoException, ConductorInexistenteException {
-        archivoTransportes.abrirParaLectura();
+        archivoTransportes.abrirParaLeerEscribir();
         Transporte transporte = null;
         try {
             char tipo = Validator.validarTexto("Ingrese el tipo de transporte que desea ingresar: \nP = Personas\nM = Mercaderias").charAt(0);
@@ -86,6 +86,16 @@ public class MenuTransporte {
         } catch (Exception e) {
             System.out.println("Error al dar de alta: " + e.getMessage());
         }
+        archivoTransportes.cerrarArchivo();
+    }
+    
+    public void crearArchivo() throws ClassNotFoundException{
+         this.archivoTransportes = new Archivo("Transportes.dat",new Transporte() {
+            @Override
+            public double calcularExtra() {
+                return 0;
+            }
+        });
     }
 
     private void bajaTransporte() {
@@ -97,7 +107,8 @@ public class MenuTransporte {
                 System.out.println("Transporte no encontrado");
                 return;
             }
-            archivoTransportes.abrirParaLectura();
+            archivoTransportes.abrirParaLeerEscribir();
+            archivoTransportes.irPrincipioArchivo();
 
             System.out.println("Datos del transporte: ");
             posicion.mostrarRegistro(1, true);
@@ -112,7 +123,9 @@ public class MenuTransporte {
 
     private void ModificarTransporte() {
         try {
-            archivoTransportes.abrirParaLectura();
+            archivoTransportes.abrirParaLeerEscribir();
+            archivoTransportes.irPrincipioArchivo();
+            
             int codigo = Validator.validarInt("Ingrese el codigo de transporte: ");
 
             Registro posicion = buscarTransporte(codigo);
@@ -134,7 +147,9 @@ public class MenuTransporte {
             
             archivoTransportes.cargarUnRegistro(posicion);
             System.out.println("Transporte Modificado");
-
+            
+            archivoTransportes.cerrarArchivo();
+            
         } catch (ConductorInexistenteException e) {
             System.out.println("Error: "+e.getMessage());
         }catch(Exception e){
@@ -145,6 +160,8 @@ public class MenuTransporte {
 
     private boolean existeConductor(long dniCond) {
         archivoConductores.abrirParaLectura();
+        archivoTransportes.irPrincipioArchivo();
+        
         try {
             for (int i = 0; i < 100; i++) {
                 archivoConductores.buscarRegistro(i);
@@ -168,6 +185,8 @@ public class MenuTransporte {
 
     private boolean existeTransporte(int codT) {
         archivoTransportes.abrirParaLectura();
+        archivoTransportes.irPrincipioArchivo();
+        
         try {
             for (int i = 0; i < 100; i++) {
                 archivoTransportes.buscarRegistro(i);
@@ -192,6 +211,8 @@ public class MenuTransporte {
 
     private Registro buscarTransporte(int codigo) {
         archivoTransportes.abrirParaLectura();
+        archivoTransportes.irPrincipioArchivo();
+        
         try {
             for (int i = 0; i < 100; i++) {
                 archivoTransportes.buscarRegistro(i);

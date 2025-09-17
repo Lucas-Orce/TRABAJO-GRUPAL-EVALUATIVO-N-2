@@ -17,37 +17,34 @@ import persistencia.*;
  */
 public class Conductor implements Serializable, Grabable, Comparable<Conductor> {
 
-    private static int contador = 0;
     private int NumOrd;  //4 
-    private int dni;  //4
+    private long dni;  //8
     private String Ape_Nom; //40
     private boolean estado; //1
 
     private static int TAMARCHIVO = 100;
-    private static int TAMAREG = 49;
+    private static int TAMAREG = 53;
 
     //Constructores
     public Conductor() {
+        estado=true;
     }
 
-    public Conductor(int dni, String Ape_Nom, boolean estado) {
-        this.NumOrd = ++contador; //para que se incremente cada vez que se cree un nuevo objeto
-        this.dni = dni;
-        this.Ape_Nom = Ape_Nom;
-        this.estado = true;
-    }
     //Fin Constructores
 
     //*****Getters & setters******
     public int getNumOrd() {
         return NumOrd;
     }
+    public void setNumOrd(int n){
+        NumOrd=n;
+    }
 
-    public int getDni() {
+    public long getDni() {
         return dni;
     }
 
-    public void setDni(int dni) {
+    public void setDni(long dni) {
         this.dni = dni;
     }
 
@@ -83,6 +80,7 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
     public void grabar(RandomAccessFile a) {
         try {
             a.writeInt(NumOrd);
+            a.writeLong(dni);
             Registro.writeString(a, Ape_Nom, 20);
         } catch (IOException e) {
             System.out.println("Error al grabar registro: " + e.getMessage());
@@ -94,6 +92,7 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
     public void leer(RandomAccessFile a, int val) {
         try {
             NumOrd = a.readInt();
+            dni = a.readLong();
             Ape_Nom = Registro.leerString(a, 20).trim();
         } catch (IOException e) {
             System.out.println("Error al leer el registro: " + e.getMessage());
@@ -160,17 +159,15 @@ public class Conductor implements Serializable, Grabable, Comparable<Conductor> 
     @Override
     public void cargarDatos(int val) {
         try {
-            if (val == 0) {
-                NumOrd = Validator.validarInt("Ingrese el numero de orden");
-            }
-
             dni = Validator.validarDNI("Ingrese el DNI del conductor: ");
             Ape_Nom = Validator.validarTexto("Ingrese el nombre y apellido del conductor");
-
             estado = true;
         } catch (Exception e) {
             System.out.println("Error al ingresar datos: " + e.getMessage());
         }
 
     }
+    
+    
+    
 }

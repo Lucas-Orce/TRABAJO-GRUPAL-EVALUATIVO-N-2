@@ -6,6 +6,8 @@
 package datos;
 
 import entradaDatos.Validator;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  *
@@ -17,6 +19,7 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
     private boolean esPeligroso;
 
     public TransporteMercaderías() {
+        
         super.Tipo='M';
         cargarDatos(0);
         super.estado = true;
@@ -78,7 +81,29 @@ public class TransporteMercaderías extends Transporte implements lCalculable {
         leerToneladas();
         Peligroso();
     }
+@Override
+    public void grabar(RandomAccessFile a) {
+        try {
+            super.grabar(a);
+            a.writeDouble(Toneladas);
+            a.writeBoolean(esPeligroso);
+        } catch (IOException e) {
+            System.out.println("Error al leer el registro: " + e.getMessage());
+            System.exit(1);
+        }
+    }
 
+    @Override
+    public void leer(RandomAccessFile a, int val) {
+        try {
+            super.leer(a, val);
+            Toneladas=a.readDouble();
+            esPeligroso=a.readBoolean();
+        } catch (IOException e) {
+            System.out.println("Error al leer el registro: " + e.getMessage());
+            System.exit(1);
+        }
+    }
     
     
 }

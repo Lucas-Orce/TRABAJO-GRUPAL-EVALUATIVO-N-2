@@ -259,6 +259,7 @@ public class Archivo {
      * Determina si se ha llegado al final del archivo o no
      *
      * @return true si se llegó al final - false en caso contrario
+     * @return true 
      */
     public boolean eof() {
         try {
