@@ -9,18 +9,12 @@ import entradaDatos.Validator;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-/**
- *
- * @author Mariano
- */
 public class TransportePersonas extends Transporte implements lCalculable {
 
     private int Personas;
 
     public TransportePersonas() {
-        super.Tipo = 'P';
-        cargarDatos(0);
-        super.estado = true;
+        super('P');
     }
 
     public int getPersonas() {
@@ -60,13 +54,14 @@ public class TransportePersonas extends Transporte implements lCalculable {
     public void cargarDatos(int val) {
         super.cargarDatos(val);
         leerPersonas();
+        this.extra = calcularExtra();
     }
 
     @Override
     public void leer(RandomAccessFile a, int val) {
         try {
             super.leer(a, val);
-            Personas=a.readInt();
+            Personas = a.readInt();
         } catch (IOException e) {
             System.out.println("Error al leer el registro: " + e.getMessage());
         }
@@ -76,10 +71,20 @@ public class TransportePersonas extends Transporte implements lCalculable {
     public void grabar(RandomAccessFile a) {
         try {
             super.grabar(a);
-            a.write(Personas);
+            a.writeInt(Personas);
+            a.writeDouble(0.0); // 8 bytes
+            a.writeBoolean(false); // 1 byte
         } catch (Exception e) {
+            System.out.println("Error al grabar: "+e.getMessage());
         }
-
     }
 
+    @Override
+    public void mostrarRegistro(int val, boolean activo) {
+        if (val==0||(activo && estado)||!activo) {
+            super.mostrarRegistro(val, activo);
+            System.out.println("Cantidad de personas: " + Personas);
+            System.out.println("------------------------");
+        }
+    }
 }

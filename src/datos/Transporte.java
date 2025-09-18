@@ -13,10 +13,6 @@ import java.io.RandomAccessFile;
 import java.io.Serializable;
 import persistencia.*;
 
-/**
- *
- * @author Mariano
- */
 public abstract class Transporte implements Serializable, lCalculable, Comparable<Transporte>, Grabable {
 
     protected int codT;
@@ -31,22 +27,34 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
     
     private static Archivo archivoConductores;
     private static Archivo archivoTransportes;
+    private Archivo instanceArchivoConductores;
+    private Archivo instanceArchivoTransportes;
 
     public Transporte() {
+        this.estado = true;
+        this.extra = 0.0;
     }
 
     public Transporte(char Tipo) {
         this.Tipo = Tipo;
-        this.extra = calcularExtra();
         this.estado = true;
+        this.extra = 0.0;
     }
     
-     public static void setArchivoConductores(Archivo archivo) {
+    public static void setArchivoConductores(Archivo archivo) {
         archivoConductores = archivo;
     }
     
     public static void setArchivoTransportes(Archivo archivo) {
         archivoTransportes = archivo;
+    }
+    
+    public void setInstanceArchivoConductores(Archivo archivo) {
+        this.instanceArchivoConductores = archivo;
+    }
+    
+    public void setInstanceArchivoTransportes(Archivo archivo) {
+        this.instanceArchivoTransportes = archivo;
     }
 
     public int getCodT() {
@@ -77,12 +85,16 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
         return dniCond;
     }
 
-    public void setDniCond(int dniCond) {
+    public void setDniCond(long dniCond) {
         this.dniCond = dniCond;
     }
 
     public double getExtra() {
         return extra;
+    }
+
+    public void setExtra(double extra) {
+        this.extra = extra;
     }
 
     public boolean isEstado() {
@@ -99,6 +111,11 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
 
     public void reActivar() {
         setEstado(true);
+    }
+    
+    // Método para calcular y asignar el extra
+    public void calcularYAsignarExtra() {
+        this.extra = calcularExtra();
     }
 
     @Override
@@ -135,12 +152,12 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
     @Override
      public void grabar(RandomAccessFile a) {
         try {
-            a.writeLong(dniCond);
-            a.writeDouble(extra);
+            a.writeInt(codT);
             a.writeChar(Tipo);
             a.writeInt(hora);
-            a.writeInt(codT);
-            Registro.writeString(a, "", 20);
+            a.writeLong(dniCond);
+            a.writeDouble(extra);
+            a.writeBoolean(estado);
         } catch (IOException e) {
             System.out.println("Error al grabar registro: " + e.getMessage());
             System.exit(1);
@@ -150,11 +167,12 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
     @Override
      public void leer(RandomAccessFile a, int val) {
         try {
-            dniCond=a.readLong();
-            extra=a.readDouble();
+            codT = a.readInt();
             Tipo = a.readChar();
             hora = a.readInt();
-            codT = a.readInt();
+            dniCond = a.readLong();
+            extra = a.readDouble();
+            estado = a.readBoolean();
         } catch (IOException e) {
             System.out.println("Error al leer el registro: " + e.getMessage());
             System.exit(1);
@@ -192,7 +210,7 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
                 codT=Validator.validarInt("Ingrese el codigo del transporte: ");
                 
                 if (existeTransporte(codT)) {
-                    throw new TransporteDuplicadoException("Alta existente");
+                    throw new TransporteDuplicadoException("Transporte ya existe");
                 }
             }
             
@@ -200,65 +218,83 @@ public abstract class Transporte implements Serializable, lCalculable, Comparabl
             
             dniCond=Validator.validarDNI("Ingrese el dni del conductor: ");
             if(!existeConductor(dniCond)){
-                throw new ConductorInexistenteException("Conductor inexistente");
+                throw new ConductorInexistenteException("Conductor con DNI " + dniCond + " no existe");
             }
+            
+            estado = true;
             
         } catch (Exception e) {
              System.out.println("Error en cargar los datos: "+e.getMessage());
+             throw new RuntimeException(e);
         }
     }
 
     private boolean existeConductor(long dni) {
-        if (archivoConductores==null) {
+        Archivo archivoAUsar = instanceArchivoConductores != null ? instanceArchivoConductores : archivoConductores;
+        
+        if (archivoAUsar == null) {
+            System.out.println("Archivo de conductores no configurado");
             return false;
         }
-        archivoConductores.abrirParaLectura();
+        
+        if (!archivoAUsar.getFd().exists()) {
+            System.out.println("Archivo de conductores no existe");
+            return false;
+        }
+        
+        archivoAUsar.abrirParaLectura();
         try {
             for (int i = 0; i < 100; i++) {
-                archivoConductores.buscarRegistro(i);
-                if (!archivoConductores.eof()) {
-                    Registro reg = archivoConductores.leerRegistro();
+                archivoAUsar.buscarRegistro(i);
+                if (!archivoAUsar.eof()) {
+                    Registro reg = archivoAUsar.leerRegistro();
                     if (reg.getEstado()) {
                         Conductor conductor = (Conductor) reg.getDatos();
-                        if (conductor.getDni()==dni) {
-                            archivoConductores.cerrarArchivo();
+                        if (conductor.getDni() == dni) {
+                            archivoAUsar.cerrarArchivo();
                             return true;
                         }
                     }
+                } else {
+                    break;
                 }
             }
         } catch (Exception e) {
             System.out.println("Error al verificar conductor: "+e.getMessage());
         }
         
-        archivoConductores.cerrarArchivo();
+        archivoAUsar.cerrarArchivo();
         return false;
     }
     
     protected boolean existeTransporte(int codT){
-        if (archivoTransportes==null) {
+        Archivo archivoAUsar = instanceArchivoTransportes != null ? instanceArchivoTransportes : archivoTransportes;
+        
+        if (archivoAUsar == null || !archivoAUsar.getFd().exists()) {
             return false;
         }
-        archivoTransportes.abrirParaLectura();
+        
+        archivoAUsar.abrirParaLectura();
         try {
             for (int i = 0; i < 100; i++) {
-                archivoTransportes.buscarRegistro(i);
-                if (!archivoTransportes.eof()) {
-                    Registro reg = archivoTransportes.leerRegistro();
+                archivoAUsar.buscarRegistro(i);
+                if (!archivoAUsar.eof()) {
+                    Registro reg = archivoAUsar.leerRegistro();
                     if (reg.getEstado()) {
                         Transporte transporte = (Transporte) reg.getDatos();
                         if (transporte.getCodT()==codT) {
-                            archivoTransportes.cerrarArchivo();
+                            archivoAUsar.cerrarArchivo();
                             return true;
                         }
                     }
+                } else {
+                    break;
                 }
             }
         } catch (Exception e) {
             System.out.println("Error al verificar transporte: "+e.getMessage());
         }
-        archivoTransportes.cerrarArchivo();
+        archivoAUsar.cerrarArchivo();
         return false;
     }
-
 }

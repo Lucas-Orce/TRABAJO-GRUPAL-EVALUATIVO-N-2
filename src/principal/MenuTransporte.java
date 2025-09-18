@@ -5,11 +5,9 @@
  */
 package principal;
 
-import datos.Conductor;
 import datos.Transporte;
 import datos.TransporteMercaderías;
 import datos.TransportePersonas;
-import entradaDatos.ConductorInexistenteException;
 import entradaDatos.TransporteDuplicadoException;
 import entradaDatos.Validator;
 import persistencia.Archivo;
@@ -25,11 +23,60 @@ public class MenuTransporte {
     private final Archivo archivoConductores;
 
     public MenuTransporte(Archivo archivoConductores) throws ClassNotFoundException {
-       crearArchivo();
         this.archivoConductores = archivoConductores;
+        crearArchivo();
+        
+        Transporte.setArchivoConductores(this.archivoConductores);
+        Transporte.setArchivoTransportes(this.archivoTransportes);
     }
 
-    void menu() throws TransporteDuplicadoException, ConductorInexistenteException {
+    public void crearArchivo() throws ClassNotFoundException {
+        this.archivoTransportes = new Archivo("Transportes.dat", new Transporte() {
+            @Override
+            public double calcularExtra() {
+                return 0;
+            }
+        });
+        
+        // Si el archivo no existe, inicializarlo
+        if (!archivoTransportes.getFd().exists()) {
+            inicializarArchivo();
+        }
+    }
+
+    private void inicializarArchivo() {
+        archivoTransportes.abrirParaLeerEscribir();
+        
+        try {
+            for (int i = 0; i < 100; i++) {
+                Transporte transporteVacio = new TransportePersonas();
+                transporteVacio.setCodT(0);
+                transporteVacio.setTipo('X');
+                transporteVacio.setHora(0);
+                transporteVacio.setDniCond(0);
+                transporteVacio.setExtra(0.0);
+                transporteVacio.setEstado(false);
+                
+                Registro regVacio = new Registro(transporteVacio, i);
+                regVacio.setEstado(false);
+                
+                archivoTransportes.buscarRegistro(i);
+                regVacio.grabar(archivoTransportes.getMaestro());
+            }
+            
+            archivoTransportes.cerrarArchivo();
+            System.out.println("Archivo inicializado con 100 registros vacíos.");
+            
+        } catch (Exception e) {
+            System.out.println("Error al inicializar archivo: " + e.getMessage());
+            try {
+                archivoTransportes.cerrarArchivo();
+            } catch (Exception ex) {}
+            System.out.println("Error al cerrar el archivo transportes: "+e.getMessage());
+        }
+    }
+
+    void menu() throws TransporteDuplicadoException {
         int opcion;
         do {
             System.out.println("---Menu Transporte---");
@@ -50,71 +97,124 @@ public class MenuTransporte {
                 case 3:
                     ModificarTransporte();
                     break;
+                case 0:
+                    System.out.println("Volviendo al menu principal...");
+                    break;
                 default:
-                    throw new AssertionError();
+                    System.out.println("Opción inválida");
             }
 
         } while (opcion != 0);
-
     }
 
-    private void altaTransporte() throws TransporteDuplicadoException, ConductorInexistenteException {
-        archivoTransportes.abrirParaLeerEscribir();
-        Transporte transporte = null;
+    private void altaTransporte() throws TransporteDuplicadoException {
         try {
-            char tipo = Validator.validarTexto("Ingrese el tipo de transporte que desea ingresar: \nP = Personas\nM = Mercaderias").charAt(0);
+            char tipo = Validator.validarTexto("Ingrese el tipo de transporte que desea ingresar: \nP = Personas\nM = Mercaderias\nIngrese una opcion: ").charAt(0);
 
-            if (tipo == 'P') {
+            Transporte transporte = null;
+            if (tipo == 'P' || tipo == 'p') {
                 transporte = new TransportePersonas();
-            } else if (tipo == 'M') {
+            } else if (tipo == 'M' || tipo == 'm') {
                 transporte = new TransporteMercaderías();
+            } else {
+                System.out.println("Tipo de transporte inválido");
+                return;
             }
 
-            if (!existeConductor(transporte.getDniCond())) {
-                throw new ConductorInexistenteException("Conductor Inexistente");
-            }
+            transporte.setInstanceArchivoConductores(archivoConductores);
+            transporte.setInstanceArchivoTransportes(archivoTransportes);
+
+            transporte.cargarDatos(0);
 
             if (existeTransporte(transporte.getCodT())) {
-                throw new TransporteDuplicadoException("Alta Existente");
+                throw new TransporteDuplicadoException("Transporte ya existe");
             }
 
-            Registro reg = new Registro(transporte, transporte.getCodT());
-            archivoTransportes.cargarUnRegistro(reg);
-            System.out.println("Transporte cargado con exito");
-        } catch (ConductorInexistenteException | TransporteDuplicadoException e) {
-            System.out.println("Error: " + e.getMessage());
+            transporte.calcularYAsignarExtra();
+
+            int posicionLibre = buscarPosicionLibre();
+            if (posicionLibre == -1) {
+                System.out.println("Archivo lleno. No se puede agregar más transportes.");
+                return;
+            }
+
+            // Crear registro con la posición libre encontrada
+            Registro reg = new Registro(transporte, posicionLibre);
+
+            grabarTransporteEnPosicion(reg, posicionLibre);
+
+            System.out.println("Transporte cargado con éxito");
+            System.out.println("Código: " + transporte.getCodT() + " en posición: " + posicionLibre);
+            System.out.println("DNI Conductor: " + transporte.getDniCond());
+            System.out.println("Extra calculado: $" + String.format("%.2f", transporte.getExtra()));
+
         } catch (Exception e) {
             System.out.println("Error al dar de alta: " + e.getMessage());
         }
-        archivoTransportes.cerrarArchivo();
     }
-    
-    public void crearArchivo() throws ClassNotFoundException{
-         this.archivoTransportes = new Archivo("Transportes.dat",new Transporte() {
-            @Override
-            public double calcularExtra() {
-                return 0;
+
+    private int buscarPosicionLibre() {
+        archivoTransportes.abrirParaLectura();
+        try {
+            for (int i = 0; i < 100; i++) {
+                archivoTransportes.buscarRegistro(i);
+                if (!archivoTransportes.eof()) {
+                    Registro reg = archivoTransportes.leerRegistro();
+                    if (!reg.getEstado()) {
+                        archivoTransportes.cerrarArchivo();
+                        return i;
+                    }
+                } else {
+                    archivoTransportes.cerrarArchivo();
+                    return i;
+                }
             }
-        });
+            archivoTransportes.cerrarArchivo();
+            return -1; // Archivo lleno
+        } catch (Exception e) {
+            System.out.println("Error: "+e.getMessage());
+            try {
+                archivoTransportes.cerrarArchivo();
+            } catch (Exception ex) {
+                System.out.println("Error al cerrar el archivo: "+e.getMessage());
+            }
+            return -1;
+        }
+    }
+
+    private void grabarTransporteEnPosicion(Registro reg, int posicion) {
+        archivoTransportes.abrirParaLeerEscribir();
+        try {
+            archivoTransportes.buscarRegistro(posicion);
+            reg.setEstado(true); 
+            reg.grabar(archivoTransportes.getMaestro());
+            System.out.println("Debug: Grabado en posición " + posicion + " con estado " + reg.getEstado());
+        } catch (Exception e) {
+            System.out.println("Error al grabar en posición " + posicion + ": " + e.getMessage());
+        }
+        archivoTransportes.cerrarArchivo();
     }
 
     private void bajaTransporte() {
         try {
             int codigo = Validator.validarInt("Ingrese el codigo de transporte: ");
 
-            Registro posicion = buscarTransporte(codigo);
-            if (posicion == null) {
+            Registro reg = buscarTransporte(codigo);
+            if (reg == null) {
                 System.out.println("Transporte no encontrado");
                 return;
             }
-            archivoTransportes.abrirParaLeerEscribir();
-            archivoTransportes.irPrincipioArchivo();
 
             System.out.println("Datos del transporte: ");
-            posicion.mostrarRegistro(1, true);
+            reg.mostrarRegistro(1, true);
 
-            archivoTransportes.bajaRegistro(posicion);
-            archivoTransportes.cerrarArchivo();
+            // Marcar como inactivo y grabar
+            reg.setEstado(false);
+            Transporte t = (Transporte) reg.getDatos();
+            t.setEstado(false);
+            grabarTransporteEnPosicion(reg, reg.getNroOrden());
+
+            System.out.println("Transporte dado de baja exitosamente");
 
         } catch (Exception e) {
             System.out.println("Error al dar de baja el transporte: " + e.getMessage());
@@ -123,70 +223,43 @@ public class MenuTransporte {
 
     private void ModificarTransporte() {
         try {
-            archivoTransportes.abrirParaLeerEscribir();
-            archivoTransportes.irPrincipioArchivo();
-            
             int codigo = Validator.validarInt("Ingrese el codigo de transporte: ");
 
-            Registro posicion = buscarTransporte(codigo);
-            if (posicion == null) {
+            Registro reg = buscarTransporte(codigo);
+            if (reg == null) {
                 System.out.println("Transporte no encontrado");
                 return;
             }
-            
+
             System.out.println("\nDatos actuales:");
-            posicion.mostrarRegistro(1, true);
-            
+            reg.mostrarRegistro(1, true);
+
             System.out.println("\nIngrese nuevos datos: ");
-            posicion.cargarDatos(1);
-            
-            Transporte transporte = (Transporte) posicion.getDatos();
-            if (!existeConductor(transporte.getDniCond())) {
-                throw new ConductorInexistenteException("Conductor inexistente");
-            }
-            
-            archivoTransportes.cargarUnRegistro(posicion);
-            System.out.println("Transporte Modificado");
-            
-            archivoTransportes.cerrarArchivo();
-            
-        } catch (ConductorInexistenteException e) {
-            System.out.println("Error: "+e.getMessage());
-        }catch(Exception e){
-            System.out.println("Error al modificar transporte: "+e.getMessage());
-        }
 
-    }
+            Transporte transporte = (Transporte) reg.getDatos();
+            transporte.setInstanceArchivoConductores(archivoConductores);
+            transporte.setInstanceArchivoTransportes(archivoTransportes);
 
-    private boolean existeConductor(long dniCond) {
-        archivoConductores.abrirParaLectura();
-        archivoTransportes.irPrincipioArchivo();
-        
-        try {
-            for (int i = 0; i < 100; i++) {
-                archivoConductores.buscarRegistro(i);
-                if (!archivoConductores.eof()) {
-                    Registro reg = archivoConductores.leerRegistro();
-                    if (reg.getEstado()) {
-                        Conductor conductor = (Conductor) reg.getDatos();
-                        if (conductor.getDni() == dniCond) {
-                            archivoConductores.cerrarArchivo();
-                            return true;
-                        }
-                    }
-                }
-            }
+            int codigoOriginal = transporte.getCodT();
+            transporte.cargarDatos(1);
+            transporte.setCodT(codigoOriginal);
+
+            transporte.calcularYAsignarExtra();
+
+            grabarTransporteEnPosicion(reg, reg.getNroOrden());
+            System.out.println("Transporte modificado exitosamente");
+
         } catch (Exception e) {
-            System.out.println("Error al verificar el conductor: " + e.getMessage());
+            System.out.println("Error al modificar transporte: " + e.getMessage());
         }
-        archivoConductores.cerrarArchivo();
-        return false;
     }
 
     private boolean existeTransporte(int codT) {
+        if (!archivoTransportes.getFd().exists()) {
+            return false;
+        }
+
         archivoTransportes.abrirParaLectura();
-        archivoTransportes.irPrincipioArchivo();
-        
         try {
             for (int i = 0; i < 100; i++) {
                 archivoTransportes.buscarRegistro(i);
@@ -199,20 +272,23 @@ public class MenuTransporte {
                             return true;
                         }
                     }
+                } else {
+                    break;
                 }
             }
         } catch (Exception e) {
-            System.out.println("Error al verificar el transporte: " + e.getMessage());
+            System.out.println("Error al verificar transporte: " + e.getMessage());
         }
-
         archivoTransportes.cerrarArchivo();
         return false;
     }
 
     private Registro buscarTransporte(int codigo) {
+        if (!archivoTransportes.getFd().exists()) {
+            return null;
+        }
+
         archivoTransportes.abrirParaLectura();
-        archivoTransportes.irPrincipioArchivo();
-        
         try {
             for (int i = 0; i < 100; i++) {
                 archivoTransportes.buscarRegistro(i);
@@ -221,10 +297,14 @@ public class MenuTransporte {
                     if (reg.getEstado()) {
                         Transporte transporte = (Transporte) reg.getDatos();
                         if (transporte.getCodT() == codigo) {
+                            Registro resultado = new Registro(transporte, i);
+                            resultado.setEstado(true);
                             archivoTransportes.cerrarArchivo();
-                            return reg;
+                            return resultado;
                         }
                     }
+                } else {
+                    break;
                 }
             }
         } catch (Exception e) {

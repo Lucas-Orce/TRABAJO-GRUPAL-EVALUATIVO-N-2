@@ -23,6 +23,7 @@ public class Principal {
     public void menuPrincipal() throws TransporteDuplicadoException, ConductorInexistenteException, ClassNotFoundException {
         int opcion;
         archivoConductores = new Archivo("Conductores.dat", new Conductor());
+
         do {
             System.out.println("---Menu Principal---");
             System.out.println("1- Alta conductores");
@@ -62,7 +63,6 @@ public class Principal {
     }
 
     private void cargaConductor() {
-        archivoConductores.abrirParaLeerEscribir();
         try {
             Conductor conductor = new Conductor();
             conductor.cargarDatos(0);
@@ -72,18 +72,21 @@ public class Principal {
                 return;
             }
 
-            int numOrd = (int) conductor.tamRegistro();
+            int numOrd = buscarProximoNumeroOrden();
             conductor.setNumOrd(numOrd);
-            
+
+            System.out.println("Debug - Asignando número de orden: " + numOrd);
+            System.out.println("Debug - DNI del conductor: " + conductor.getDni());
+            System.out.println("Debug - Nombre del conductor: " + conductor.getApe_Nom());
+
             Registro regConductor = new Registro(conductor, conductor.getNumOrd());
             archivoConductores.cargarUnRegistro(regConductor);
 
-            System.out.println("Conductor grabado con exito");
+            System.out.println("Conductor grabado con éxito en la posición: " + numOrd);
 
         } catch (Exception e) {
-            System.out.println("Error al cargar un conductor" + e.getMessage());
+            System.out.println("Error al cargar un conductor: " + e.getMessage());
         }
-        archivoConductores.cerrarArchivo();
     }
 
     private void menuTransporte() throws TransporteDuplicadoException, ConductorInexistenteException, ClassNotFoundException {
@@ -92,72 +95,117 @@ public class Principal {
     }
 
     private void listadoSueldos() {
-        archivoConductores.abrirParaLectura();
-        archivoConductores.irPrincipioArchivo();
+        
+    if (!archivoConductores.getFd().exists()) {
+        System.out.println("El archivo Conductores.dat no existe.");
+        return;
+    }
 
-        try {
-            while (!archivoConductores.eof()) {
+    archivoConductores.abrirParaLectura();
+    archivoConductores.irPrincipioArchivo();
+
+    try {
+        boolean hayConductores = false;
+        for (int i = 0; i < 100; i++) {
+            archivoConductores.buscarRegistro(i);
+            if (!archivoConductores.eof()) {
                 Registro reg = archivoConductores.leerRegistro();
-                reg.mostrarRegistro(1, true);
+
                 if (reg.getEstado()) {
-                    reg.mostrarRegistro(1, true);
                     Conductor conductor = (Conductor) reg.getDatos();
+                    double sueldo = calcularSueldoConductor(conductor.getDni());
+
                     System.out.println("Conductor: " + conductor.getApe_Nom());
                     System.out.println("DNI: " + conductor.getDni());
+                    System.out.println("Número de Orden: " + conductor.getNumOrd());
+                    System.out.println("Sueldo Total: $" + String.format("%.2f", sueldo));
+                    System.out.println("------------------------");
+                    hayConductores = true;
                 }
+            } else {
+                break; // Si llegamos al final del archivo, salir del bucle
             }
-
-        } catch (Exception e) {
-            System.out.println("Error al listar los sueldos" + e.getMessage());
         }
 
+        if (!hayConductores) {
+            System.out.println("No hay conductores activos registrados en el archivo.");
+        }
+
+    } catch (Exception e) {
+        System.out.println("Error al listar los sueldos: " + e.getMessage());
     }
+
+    archivoConductores.cerrarArchivo();
+}
 
     private void listadoTransporte() {
+    long dni = Validator.validarDNI("");
 
-        long dni = Validator.validarDNI("Ingrese el dni del conductor a listar: ");
-
-        if (!existeConductor(dni)) {
-            System.out.println("Conductor inexistente");
-            return;
-        }
-
-        Conductor conductor = obtenerConductorPorDNI(dni);
-        System.out.println("\nConductor; " + conductor.getApe_Nom());
-        System.out.println("DNI: " + conductor.getDni());
-        if (archivoTransportes != null) {
-            archivoTransportes.abrirParaLectura();
-            archivoTransportes.irPrincipioArchivo();
-
-            try {
-                boolean hayTransporte = false;
-                for (int i = 0; i < 100; i++) {
-                    archivoTransportes.buscarRegistro(i);
-                    if (!archivoTransportes.eof()) {
-                        Registro reg = archivoTransportes.leerRegistro();
-                        if (reg.getEstado()) {
-                            Transporte transporte = (Transporte) reg.getDatos();
-                            if (transporte.getDniCond() == dni) {
-                                System.out.println("Monto extra: " + String.format("%.2f", transporte.getExtra()));
-                                hayTransporte = true;
-                            }
-                        }
-                    }
-                }
-                if (!hayTransporte) {
-                    System.out.println("No hay transportes ingresados en el archvo TRANSPORTES");
-                }
-            } catch (Exception e) {
-                System.out.println("Error al listar los transportes: " + e.getMessage());
-            }
-            archivoTransportes.cerrarArchivo();
-        } else {
-            System.out.println("Archivo Transporte no inicializado!!!!");
-        }
-
+    if (!existeConductor(dni)) {
+        System.out.println("Conductor inexistente");
+        return;
     }
 
+    Conductor conductor = obtenerConductorPorDNI(dni);
+    System.out.println("\nConductor: " + conductor.getApe_Nom());
+    System.out.println("DNI: " + conductor.getDni());
+    
+    try {
+        if (archivoTransportes == null) {
+            archivoTransportes = new Archivo("Transportes.dat", new Transporte() {
+                @Override
+                public double calcularExtra() {
+                    return 0;
+                }
+            });
+        }
+        
+        Transporte.setArchivoConductores(archivoConductores);
+        Transporte.setArchivoTransportes(archivoTransportes);
+        
+        if (!archivoTransportes.getFd().exists()) {
+            System.out.println("No hay archivo de transportes. No hay transportes registrados para este conductor.");
+            return;
+        }
+        
+        archivoTransportes.abrirParaLectura();
+        archivoTransportes.irPrincipioArchivo();
+
+        boolean hayTransporte = false;
+        for (int i = 0; i < 100; i++) {
+            archivoTransportes.buscarRegistro(i);
+            if (!archivoTransportes.eof()) {
+                Registro reg = archivoTransportes.leerRegistro();
+                if (reg.getEstado()) {
+                    Transporte transporte = (Transporte) reg.getDatos();
+                    if (transporte.getDniCond() == dni) {
+                        System.out.println("Codigo Transporte: " + transporte.getCodT());
+                        System.out.println("Tipo: " + transporte.getTipo());
+                        System.out.println("Horas: " + transporte.getHora());
+                        System.out.println("Monto extra: $" + String.format("%.2f", transporte.getExtra()));
+                        System.out.println("------------------------");
+                        hayTransporte = true;
+                    }
+                }
+            } else {
+                break; // Fin del archivo
+            }
+        }
+        if (!hayTransporte) {
+            System.out.println("No hay transportes asignados a este conductor.");
+        }
+        archivoTransportes.cerrarArchivo();
+        
+    } catch (Exception e) {
+        System.out.println("Error al acceder al archivo de transportes: " + e.getMessage());
+    }
+}
+
     private boolean existeConductor(long dni) {
+        if (!archivoConductores.getFd().exists()) {
+            return false;
+        }
+
         archivoConductores.abrirParaLectura();
         archivoConductores.irPrincipioArchivo();
 
@@ -171,42 +219,62 @@ public class Principal {
                         archivoConductores.cerrarArchivo();
                         return true;
                     }
+                } else {
+                    break; // Fin del archivo
                 }
             }
         } catch (Exception e) {
             System.out.println("Error al verificar el conductor: " + e.getMessage());
         }
-        archivoConductores.cerrarArchivo();;
+        archivoConductores.cerrarArchivo();
         return false;
     }
 
     private double calcularSueldoConductor(long dni) {
+    double sueldoFijo = 400000;
+    double totalExtra = 0.0;
 
-        double sueldoFijo = 400000;
-        double totalExtra = 0.0;
-
+    try {
+        if (archivoTransportes == null) {
+            archivoTransportes = new Archivo("Transportes.dat", new Transporte() {
+                @Override
+                public double calcularExtra() {
+                    return 0;
+                }
+            });
+        }
+        
+        if (!archivoTransportes.getFd().exists()) {
+            return sueldoFijo;
+        }
+        
         archivoTransportes.abrirParaLectura();
         archivoTransportes.irPrincipioArchivo();
-
-        try {
-            for (int i = 0; i < 100; i++) {
-                archivoTransportes.buscarRegistro(i);
-                if (!archivoTransportes.eof()) {
-                    Registro reg = archivoTransportes.leerRegistro();
-                    if (reg.getEstado()) {
-                        Transporte transporte = (Transporte) reg.getDatos();
-                        if (transporte.getDniCond() == dni) {
-                            totalExtra += transporte.getExtra();
-                        }
+        
+        for (int i = 0; i < 100; i++) {
+            archivoTransportes.buscarRegistro(i);
+            if (!archivoTransportes.eof()) {
+                Registro reg = archivoTransportes.leerRegistro();
+                if (reg.getEstado()) {
+                    Transporte transporte = (Transporte) reg.getDatos();
+                    if (transporte.getDniCond() == dni) {
+                        totalExtra += transporte.getExtra();
                     }
                 }
+            } else {
+                break; // Salir si llegamos al final del archivo
             }
-        } catch (Exception e) {
-            System.out.println("Error al calcular el sueldo: " + e.getMessage());
         }
+        
         archivoTransportes.cerrarArchivo();
-        return sueldoFijo + totalExtra;
+        
+    } catch (Exception e) {
+        System.out.println("Error al calcular el sueldo: "+e.getMessage());
+        return sueldoFijo;
     }
+    
+    return sueldoFijo + totalExtra;
+}
 
     private Conductor obtenerConductorPorDNI(long dni) {
         archivoConductores.abrirParaLectura();
@@ -233,14 +301,40 @@ public class Principal {
         return null;
     }
 
-    /*
-     if (archivoTransportes == null) {
-                        double sueldo = calcularSueldoConductor(conductor.getDni());
-                        System.out.println("Sueldo: " + String.format("%.2f", sueldo));
+    private int buscarProximoNumeroOrden() {
+        // Si el archivo no existe, empezar desde 0
+        if (!archivoConductores.getFd().exists()) {
+            return 0;
+        }
 
-                    } else {
-                        System.out.println("Archivo Transporte no inicializado!!");
-                    }
-    
-     */
+        archivoConductores.abrirParaLectura();
+        archivoConductores.irPrincipioArchivo();
+
+        try {
+            for (int i = 0; i < 100; i++) {
+                archivoConductores.buscarRegistro(i);
+                if (archivoConductores.eof()) {
+                    archivoConductores.cerrarArchivo();
+                    return i;
+                }
+
+                Registro reg = archivoConductores.leerRegistro();
+                if (!reg.getEstado()) {
+                    archivoConductores.cerrarArchivo();
+                    return i;
+                }
+            }
+
+            archivoConductores.cerrarArchivo();
+            return 99; // 
+
+        } catch (Exception e) {
+            System.out.println("Error al buscar próximo número de orden: " + e.getMessage());
+            try {
+                archivoConductores.cerrarArchivo();
+            } catch (Exception ex) {
+            }
+            return 0;
+        }
+    }
 }
